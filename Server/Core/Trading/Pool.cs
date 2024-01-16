@@ -13,7 +13,7 @@ public class Pool
     public Guid Guid { get; set; } = Guid.NewGuid();
     public decimal PooledPrimaryCoin { get; set; }
     public decimal PooledSecondaryCoin { get; set; }
-    public virtual Coin PrimaryCoin { get; set; } = null!;
-    public virtual Coin SecondaryCoin { get; set; } = null!;
-    public virtual Coin LiquidityCoin { get; set; } = null!;
+    public virtual required Coin PrimaryCoin { get; set; }
+    public virtual required Coin SecondaryCoin { get; set; }
+    public virtual required Coin LiquidityCoin { get; set; } 
 }

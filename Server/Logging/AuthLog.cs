@@ -17,6 +17,6 @@ public class AuthLog
     public string UserAgent { get; set; } = null!;
     public bool LoginSuccessful { get; set; }
     public string Details { get; set; } = string.Empty;
-
-    [JsonIgnore] public virtual Account Account { get; set; } = null!;
+    [JsonIgnore] 
+    public virtual required Account Account { get; set; }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Server.Core.Coins;
 using Server.Core.Wallets;
 using Server.Database;
 using Server.Logging;
@@ -9,16 +10,27 @@ public class TradingManager(AppDbContext db)
 {
     private const decimal FeePercentage = 0.02m;
     private readonly WalletManager _walletManager = new(db);
-
-    public async Task<Pool?> GetPoolByGuid(Guid guid)
+    /// <summary>
+    /// Gets a pools information from a specific Guid.
+    /// </summary>
+    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <returns>
+    /// A <see cref="Pool"/> object containing pool information.
+    /// </returns>
+    public async Task<Pool?> GetPoolByGuid(Guid poolGuid)
     {
         return await db.Pools
             .Include(pool => pool.PrimaryCoin)
             .Include(pool => pool.SecondaryCoin)
             .Include(pool => pool.LiquidityCoin)
-            .FirstOrDefaultAsync(pool => pool.Guid == guid);
+            .FirstOrDefaultAsync(pool => pool.Guid == poolGuid);
     }
-
+    /// <summary>
+    /// Gets all available pools
+    /// </summary>
+    /// <returns>
+    /// A list of <see cref="Pool"/>s.
+    /// </returns>
     public async Task<IEnumerable<Pool>> GetPools()
     {
         return await db.Pools
@@ -26,20 +38,37 @@ public class TradingManager(AppDbContext db)
             .Include(lP => lP.SecondaryCoin)
             .ToListAsync();
     }
-
+    /// <summary>
+    /// Gets a pools trade history.
+    /// </summary>
+    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <returns>
+    /// A list of <see cref="PoolTradeLog"/>s containing pool trade history.
+    /// </returns>
     public async Task<IEnumerable<PoolTradeLog>> GetPoolTrades(Guid poolGuid)
     {
         var recentTrades =
-            await db.PoolTradeLogs.Where(log => log.Pool.Guid == poolGuid).OrderByDescending(log => log.Time).Take(50)
+            await db.PoolTradeLogs
+                .Where(log => log.Pool.Guid == poolGuid)
+                .OrderByDescending(log => log.Time)
+                .Take(50)
                 .ToListAsync();
         return recentTrades;
     }
     
-    
+    /// <summary>
+    /// Gets a pools chart data.
+    /// </summary>
+    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <returns>
+    /// A object containing candlestick chart data for the specified pool.
+    /// </returns>
     public async Task<IEnumerable<object>> GetChartData(Guid poolGuid)
     {
         var recentTrades =
-            await db.PoolTradeLogs.Where(log => log.Pool.Guid == poolGuid).OrderBy(log => log.Time)
+            await db.PoolTradeLogs
+                .Where(log => log.Pool.Guid == poolGuid)
+                .OrderBy(log => log.Time)
                 .ToListAsync();
         
         var groupedByHour = recentTrades
@@ -127,28 +156,24 @@ public class TradingManager(AppDbContext db)
         var amount = (decimal)Math.Sqrt((double)primaryQuantity * (double)secondaryQuantity);
         return amount;
     }
-
+    /// <summary>
+    /// Processes a buy order into the specified pool.
+    /// </summary>
+    /// <param name="accountGuid">The <see cref="Guid"/> identifying the account.</param>
+    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="quantitySold">The quantity of quote asset to be sold. </param>
+    /// <returns>
+    /// A boolean indication trade success or failure.
+    /// </returns>
     public async Task<bool> BuyCoins(Guid accountGuid, Guid poolGuid, decimal quantitySold)
     {
         var pool = await GetPoolByGuid(poolGuid);
         if (pool is null) return false;
         // Get users wallet
         var wallet = await _walletManager.Get(accountGuid);
-
-        // Get balances for pool coins
-        var baseBalance = wallet.GetBalance(pool.PrimaryCoin);
-        var quoteBalance = wallet.GetBalance(pool.SecondaryCoin);
-        if (quoteBalance is null) // Doesnt have needed coin to buy with
-            return false;
-        if (baseBalance is null)
-            baseBalance = new WalletBalance
-            {
-                Coin = pool.PrimaryCoin,
-                Wallet = wallet
-            };
-
-        // Insufficient funds
-        if (quantitySold > quoteBalance.Quantity)
+        
+        // Return false if wallet doesnt have required coins
+        if (!wallet.CheckBalance(pool.SecondaryCoin, quantitySold))
             return false;
 
         var feeAmount = quantitySold * FeePercentage;
@@ -156,50 +181,49 @@ public class TradingManager(AppDbContext db)
         //TODO Send fee amount to liquidity providers
         //TODO 
 
-
-        // AMMM k = x * y
-
-        var dBeta = quantitySold - feeAmount;
-        var k = pool.PooledPrimaryCoin * pool.PooledSecondaryCoin;
-        var rAlpha = pool.PooledPrimaryCoin;
-        var rBeta = pool.PooledSecondaryCoin;
-        var dAlpha = k / (rBeta + dBeta);
-        var received = rAlpha - dAlpha;
-
+        var coinsReceived = CalculateReceivedOnBuy(pool, quantitySold);
 
         // Ensure pool has coins
-        if (received >= pool.PooledPrimaryCoin) return false;
+        if (coinsReceived >= pool.PooledPrimaryCoin) return false;
 
         // Add the purchased coins
-        baseBalance.Quantity += received;
-
+        wallet.DepositCoin(pool.PrimaryCoin, coinsReceived);
+        
         // Remove the sold coins
-        quoteBalance.Quantity -= quantitySold;
+        wallet.WithdrawCoin(pool.SecondaryCoin, quantitySold);
 
         //Update liquidity pool
-        pool.PooledPrimaryCoin -= received;
+        pool.PooledPrimaryCoin -= coinsReceived;
         pool.PooledSecondaryCoin += quantitySold - feeAmount;
 
         db.Pools.Update(pool);
-        db.WalletBalances.UpdateRange(baseBalance, quoteBalance);
+        db.Wallets.Update(wallet);
 
         // Log trade event
-        var poolLog = new PoolTradeLog
+        await LogTradeEvent(new PoolTradeLog()
         {
             TradeType = TradeType.Buy,
             Time = DateTime.UtcNow,
             Price = pool.PooledSecondaryCoin / pool.PooledPrimaryCoin,
-            QuantityReceived = received,
-            CoinReceived = baseBalance.Coin,
+            QuantityReceived = coinsReceived,
+            CoinReceived = pool.PrimaryCoin,
             Pool = pool,
             Wallet = wallet
-        };
-        await db.PoolTradeLogs.AddAsync(poolLog);
+        });
 
         await db.SaveChangesAsync();
         return true;
     }
-
+    
+    /// <summary>
+    /// Processes a sell order into the specified pool.
+    /// </summary>
+    /// <param name="accountGuid">The <see cref="Guid"/> identifying the account.</param>
+    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="quantitySold">The quantity of base asset to be sold. </param>
+    /// <returns>
+    /// A boolean indication trade success or failure.
+    /// </returns>
     public async Task<bool> SellCoins(Guid accountGuid, Guid poolGuid, decimal quantitySold)
     {
         var pool = await GetPoolByGuid(poolGuid);
@@ -207,64 +231,75 @@ public class TradingManager(AppDbContext db)
         // Get users wallet
         var wallet = await _walletManager.Get(accountGuid);
 
-        // Get balances for pool coins
-        var baseBalance = wallet.GetBalance(pool.PrimaryCoin);
-        var quoteBalance = wallet.GetBalance(pool.SecondaryCoin);
-        if (baseBalance is null)
+        // Return false if wallet doesnt have required coins
+        if (!wallet.CheckBalance(pool.PrimaryCoin, quantitySold))
             return false;
-        if (quoteBalance is null)
-            quoteBalance = new WalletBalance
-            {
-                Coin = pool.SecondaryCoin,
-                Wallet = wallet
-            };
-
+        
         var feeAmount = quantitySold * FeePercentage;
         //TODO 
         //TODO Send fee amount to liquidity providers
         //TODO 
 
-        // AMMM k = x * y
-        var dAlpha = quantitySold - feeAmount;
-        var k = pool.PooledPrimaryCoin * pool.PooledSecondaryCoin;
-        var rAlpha = pool.PooledPrimaryCoin;
-        var rBeta = pool.PooledSecondaryCoin;
-        var dBeta = k / (rAlpha - dAlpha);
-        var received = dBeta - rBeta;
+        var coinsReceived = CalculateReceivedOnSell(pool, quantitySold);
 
         // Ensure pool has coins
-        if (received >= pool.PooledSecondaryCoin) return false;
-
-        // Add the purchased coins
-        baseBalance.Quantity -= quantitySold;
+        if (coinsReceived >= pool.PooledSecondaryCoin) return false;
 
         // Remove the sold coins
-        quoteBalance.Quantity += received;
+        wallet.WithdrawCoin(pool.PrimaryCoin, quantitySold);
+
+        // Add the purchased coins
+        wallet.DepositCoin(pool.SecondaryCoin, coinsReceived);
 
         //Update liquidity pool
         pool.PooledPrimaryCoin += quantitySold - feeAmount;
-        pool.PooledSecondaryCoin -= received;
+        pool.PooledSecondaryCoin -= coinsReceived;
 
         db.Pools.Update(pool);
-        db.WalletBalances.UpdateRange(baseBalance, quoteBalance);
+        db.Wallets.Update(wallet);
 
         // Log trade event
-        var poolLog = new PoolTradeLog
+        // Log trade event
+        await LogTradeEvent(new PoolTradeLog()
         {
             TradeType = TradeType.Sell,
             Time = DateTime.UtcNow,
             Price = pool.PooledSecondaryCoin / pool.PooledPrimaryCoin,
-            QuantityReceived = quantitySold,
-            CoinReceived = quoteBalance.Coin,
+            QuantityReceived = coinsReceived,
+            CoinReceived = pool.SecondaryCoin,
             Pool = pool,
             Wallet = wallet
-        };
-        await db.PoolTradeLogs.AddAsync(poolLog);
+        });
 
         await db.SaveChangesAsync();
 
         return true;
     }
+
+    private async Task LogTradeEvent(PoolTradeLog log)
+    {
+        await db.PoolTradeLogs.AddAsync(log);
+    }
     
+    private static decimal CalculateReceivedOnBuy(Pool pool, decimal quantitySold)
+    {
+        var feeAmount = quantitySold * FeePercentage;
+        var dBeta = quantitySold - feeAmount;
+        var k = pool.PooledPrimaryCoin * pool.PooledSecondaryCoin;
+        var rAlpha = pool.PooledPrimaryCoin;
+        var rBeta = pool.PooledSecondaryCoin;
+        var dAlpha = k / (rBeta + dBeta);
+        return rAlpha - dAlpha;
+    }    
+    private static decimal CalculateReceivedOnSell(Pool pool, decimal quantitySold)
+    {
+        var feeAmount = quantitySold * FeePercentage;
+        var dAlpha = quantitySold - feeAmount;
+        var k = pool.PooledPrimaryCoin * pool.PooledSecondaryCoin;
+        var rAlpha = pool.PooledPrimaryCoin;
+        var rBeta = pool.PooledSecondaryCoin;
+        var dBeta = k / (rAlpha - dAlpha);
+        return dBeta - rBeta;
+    }    
 
 }

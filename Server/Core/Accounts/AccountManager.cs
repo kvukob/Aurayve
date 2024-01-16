@@ -17,16 +17,27 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
 {
     private readonly EmailService _emailService = new(configuration);
 
-    public async Task<Account?> GetByEmail(string email)
-    {
-        return await db.Accounts.FirstOrDefaultAsync(a => a.Email == email);
-    }
-
+    /// <summary>
+    /// Retrieves an account from the database based on the GUID.
+    /// </summary>
+    /// <param name="guid">The GUID associated with the account to be retrieved.</param>
+    /// <returns>
+    /// An <see cref="Account"/>.
+    /// The task result is the retrieved <see cref="Account"/> or <c>null</c> if no matching account is found.
+    /// </returns>
     public async Task<Account?> GetByGuid(Guid guid)
     {
         return await db.Accounts.FirstOrDefaultAsync(a => a.Guid == guid);
     }
 
+    /// <summary>
+    /// Retrieves an accounts details based on the GUID.
+    /// </summary>
+    /// <param name="accountGuid">The GUID associated with the account to be retrieved.</param>
+    /// <returns>
+    /// An <see cref="Account"/>.
+    /// The task result is the retrieved <see cref="AccountDetails"/> or <c>null</c> if no matching account is found.
+    /// </returns>
     public async Task<AccountDetails?> GetDetails(Guid accountGuid)
     {
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Guid == accountGuid);
@@ -42,6 +53,14 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         return details;
     }
 
+    /// <summary>
+    /// Retrieves an accounts login history based on the GUID.
+    /// </summary>
+    /// <param name="accountGuid">The GUID associated with the account to be retrieved.</param>
+    /// <returns>
+    /// An <see cref="AuthLog"/> list.
+    /// The task result is the retrieved <see cref="AuthLog"/> list or <c>null</c> if no matching account is found.
+    /// </returns>
     public async Task<IEnumerable<AuthLog>> GetLoginHistory(Guid accountGuid)
     {
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Guid == accountGuid);
@@ -91,6 +110,13 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         return token;
     }
 
+    /// <summary>
+    /// Initiates account creation by sending an email address a verification code.
+    /// </summary>
+    /// <param name="email">The email address of which to send the code to.</param>
+    /// <returns>
+    /// The task result is a boolean, returning true if the email was sent or false if something went wrong.
+    /// </returns>
     public async Task<bool> InitiateRegistration(string email)
     {
         // Check if account already exists
@@ -100,7 +126,15 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         // Send verification email
         return await SendCode(CodeType.InitialEmail, email);
     }
-
+    
+    /// <summary>
+    /// Verifies a verification code and email against the stored verification log in the database.
+    /// </summary>
+    /// <param name="email">The email address of which to send the code to.</param>
+    /// <param name="verificationCode">A verification code.</param>
+    /// <returns>
+    /// The task result is a boolean, returning true if the code matches the email.
+    /// </returns>
     public async Task<bool> VerifyRegistration(string email, string verificationCode)
     {
         // Check if account already exists
@@ -116,6 +150,15 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         return verificationLog is not null;
     }
 
+    /// <summary>
+    /// Finishes registering a new account.
+    /// </summary>
+    /// <param name="email">The email address for the new account.</param>
+    /// <param name="verificationCode">A verification code.</param>
+    /// <param name="password">The password for the new account.</param>
+    /// <returns>
+    /// The task result is a boolean, returning true if the account has been registered.
+    /// </returns>
     public async Task<bool> FinalizeRegistration(string email, string verificationCode, string password)
     {
         // Check if account already exists
@@ -141,6 +184,16 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         return await db.SaveChangesAsync() == 2;
     }
 
+    /// <summary>
+    /// Changes an email address for a specified account.
+    /// </summary>
+    /// <param name="accountGuid">The GUID representing the account.</param>
+    /// <param name="newEmail">The new email address for the account.</param>
+    /// <param name="newEmailCode">The verification code for the new email.</param>
+    /// <param name="currentEmailCode">The verification code for the accounts current email.</param>
+    /// <returns>
+    /// The task result is a boolean, returning if the email has been changed with an error message if applicable. 
+    /// </returns>
     public async Task<Tuple<bool, string>> ChangeEmail(Guid accountGuid, string newEmail, string newEmailCode,
         string currentEmailCode)
     {
@@ -172,6 +225,15 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         return new Tuple<bool, string>(true, "Your email has been changed successfully.");
     }
 
+    /// <summary>
+    /// Changes an password for a specified account.
+    /// </summary>
+    /// <param name="accountGuid">The GUID representing the account.</param>
+    /// <param name="currentPassword">The current password for the account.</param>
+    /// <param name="newPassword">The new password for the account.</param>
+    /// <returns>
+    /// The task result is a boolean, returning if the password has been changed with an error message if applicable. 
+    /// </returns>
     public async Task<Tuple<bool, string>> ChangePassword(Guid accountGuid, string currentPassword, string newPassword)
     {
         var account = await GetByGuid(accountGuid);
@@ -250,6 +312,12 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         return tokenHandler.WriteToken(token);
     }
 
+    /// <summary>
+    ///     Sends a verification code to a provided email address to validate them as the email owner.
+    /// </summary>
+    /// <param name="codeType">The type of code to generate</param>
+    /// <param name="email">The email address to send the code.</param>
+    /// <returns>The JWT as a string.</returns>
     public async Task<bool> SendCode(CodeType codeType, string email)
     {
         // Check, if exists, previous code of same type and removes it regardless of expiry
@@ -293,7 +361,12 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         await db.SaveChangesAsync();
         return true;
     }
-
+    
+    /// <summary>
+    ///     Returns the expiry time based on a provided CodeType.
+    /// </summary>
+    /// <param name="codeType">The type of code.</param>
+    /// <returns>A DateTime object containing the expiry time.</returns>
     private static DateTime SetCodeExpiration(CodeType codeType)
     {
         return codeType switch
@@ -304,7 +377,11 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
             _ => throw new ArgumentOutOfRangeException(nameof(codeType), codeType, null)
         };
     }
-
+    /// <summary>
+    ///     Generates and returns a verification code.
+    /// </summary>
+    /// <param name="length">The length of code.</param>
+    /// <returns>A string containing the generated code.</returns>
     private static string GenerateVerificationCode(int length = 6)
     {
         const string characters = "0123456789";
