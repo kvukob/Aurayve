@@ -10,6 +10,7 @@ public class Coin
     [JsonIgnore]
     public int Id { get; set; }
 
-    [MaxLength(25)] public string Name { get; set; } = null!;
-    [MaxLength(5)] public string Symbol { get; set; } = null!;
+    [MaxLength(25)] public required string Name { get; set; }
+
+    [MaxLength(5)] public required string Symbol { get; set; }
 }

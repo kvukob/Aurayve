@@ -10,16 +10,16 @@ public class Account
     [JsonIgnore]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
-    [JsonIgnore] 
-    public Guid Guid { get; private set; } = Guid.NewGuid();
-    [JsonIgnore, MaxLength(100)] 
-    public string Email { get; set; } = null!;
-    [MaxLength(35)] 
-    public string? Username { get; set; }
-    [JsonIgnore, MaxLength(84)] 
-    public string HashedPassword { get; set; } = null!;
-    [JsonIgnore] 
-    public DateTime DateRegistered { get; private set; } = DateTime.UtcNow;
+
+    [JsonIgnore] public Guid Guid { get; private set; } = Guid.NewGuid();
+
+    [JsonIgnore] [MaxLength(100)] public required string Email { get; set; }
+
+    [MaxLength(35)] public string Username { get; set; } = string.Empty;
+
+    [JsonIgnore] [MaxLength(84)] public required string HashedPassword { get; set; }
+
+    [JsonIgnore] public DateTime DateRegistered { get; private set; } = DateTime.UtcNow;
 
     /*
      *  Masks an account email address

@@ -9,12 +9,13 @@ namespace Server.Core.Faucet;
 public class FaucetManager(AppDbContext db)
 {
     private const decimal ClaimAmount = 0.25m;
+
     /// <summary>
-    /// Claims coins out of a specified faucet.
+    ///     Claims coins out of a specified faucet.
     /// </summary>
-    /// <param name="accountGuid">The <see cref="Guid"/> identifying the account.</param>
+    /// <param name="accountGuid">The <see cref="Guid" /> identifying the account.</param>
     /// <returns>
-    /// A Tuple DTO containing whether the claim was successful or not with a message.
+    ///     A Tuple DTO containing whether the claim was successful or not with a message.
     /// </returns>
     public async Task<Tuple<bool, string>> Claim(Guid accountGuid)
     {
@@ -23,21 +24,21 @@ public class FaucetManager(AppDbContext db)
         if (coin is null) return new Tuple<bool, string>(false, "Server error when attempting to claim ");
 
         var wallet = await walletManager.Get(accountGuid);
-        
+
         wallet.DepositCoin(coin, ClaimAmount);
         await LogClaimEvent(wallet, coin, ClaimAmount);
 
         return await db.SaveChangesAsync() >= 2
             ? new Tuple<bool, string>(true, $" You claimed {ClaimAmount} {coin.Symbol}!")
             : new Tuple<bool, string>(false, $"Error claiming {coin.Symbol}.  Please contact support.");
-
     }
+
     /// <summary>
-    /// Logs a faucet claim event to the database.
+    ///     Logs a faucet claim event to the database.
     /// </summary>
-    /// <param name="wallet">The <see cref="Guid"/> identifying the wallet that claimed.</param>
-    /// <param name="coin">The <see cref="Guid"/> identifying the claimed coin.</param>
-    /// <param name="amount">The <see cref="Guid"/> identifying the claimed amount.</param>
+    /// <param name="wallet">The <see cref="Guid" /> identifying the wallet that claimed.</param>
+    /// <param name="coin">The <see cref="Guid" /> identifying the claimed coin.</param>
+    /// <param name="amount">The <see cref="Guid" /> identifying the claimed amount.</param>
     private async Task LogClaimEvent(Wallet wallet, Coin coin, decimal amount)
     {
         var logItem = new FaucetLog

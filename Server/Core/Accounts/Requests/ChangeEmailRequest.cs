@@ -2,7 +2,7 @@
 
 public class ChangeEmailRequest
 {
-    public string NewEmail { get; set; } = null!;
-    public string NewEmailCode { get; set; } = null!;
-    public string CurrentEmailCode { get; set; } = null!;
+    public required string NewEmail { get; set; }
+    public required string NewEmailCode { get; set; }
+    public required string CurrentEmailCode { get; set; }
 }

@@ -2,6 +2,6 @@
 
 public class PoolOrderRequest
 {
-    public Guid PoolGuid { get; set; }
-    public decimal Quantity { get; set; }
+    public required Guid PoolGuid { get; set; }
+    public required decimal Quantity { get; set; }
 }

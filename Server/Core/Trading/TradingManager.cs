@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Server.Core.Coins;
 using Server.Core.Wallets;
 using Server.Database;
 using Server.Logging;
@@ -10,12 +9,13 @@ public class TradingManager(AppDbContext db)
 {
     private const decimal FeePercentage = 0.02m;
     private readonly WalletManager _walletManager = new(db);
+
     /// <summary>
-    /// Gets a pools information from a specific Guid.
+    ///     Gets a pools information from a specific Guid.
     /// </summary>
-    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="poolGuid">The <see cref="Guid" /> identifying the pool.</param>
     /// <returns>
-    /// A <see cref="Pool"/> object containing pool information.
+    ///     A <see cref="Pool" /> object containing pool information.
     /// </returns>
     public async Task<Pool?> GetPoolByGuid(Guid poolGuid)
     {
@@ -25,11 +25,12 @@ public class TradingManager(AppDbContext db)
             .Include(pool => pool.LiquidityCoin)
             .FirstOrDefaultAsync(pool => pool.Guid == poolGuid);
     }
+
     /// <summary>
-    /// Gets all available pools
+    ///     Gets all available pools
     /// </summary>
     /// <returns>
-    /// A list of <see cref="Pool"/>s.
+    ///     A list of <see cref="Pool" />s.
     /// </returns>
     public async Task<IEnumerable<Pool>> GetPools()
     {
@@ -38,12 +39,13 @@ public class TradingManager(AppDbContext db)
             .Include(lP => lP.SecondaryCoin)
             .ToListAsync();
     }
+
     /// <summary>
-    /// Gets a pools trade history.
+    ///     Gets a pools trade history.
     /// </summary>
-    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="poolGuid">The <see cref="Guid" /> identifying the pool.</param>
     /// <returns>
-    /// A list of <see cref="PoolTradeLog"/>s containing pool trade history.
+    ///     A list of <see cref="PoolTradeLog" />s containing pool trade history.
     /// </returns>
     public async Task<IEnumerable<PoolTradeLog>> GetPoolTrades(Guid poolGuid)
     {
@@ -55,13 +57,13 @@ public class TradingManager(AppDbContext db)
                 .ToListAsync();
         return recentTrades;
     }
-    
+
     /// <summary>
-    /// Gets a pools chart data.
+    ///     Gets a pools chart data.
     /// </summary>
-    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="poolGuid">The <see cref="Guid" /> identifying the pool.</param>
     /// <returns>
-    /// A object containing candlestick chart data for the specified pool.
+    ///     A object containing candlestick chart data for the specified pool.
     /// </returns>
     public async Task<IEnumerable<object>> GetChartData(Guid poolGuid)
     {
@@ -70,7 +72,7 @@ public class TradingManager(AppDbContext db)
                 .Where(log => log.Pool.Guid == poolGuid)
                 .OrderBy(log => log.Time)
                 .ToListAsync();
-        
+
         var groupedByHour = recentTrades
             .GroupBy(item => item.Time.Hour);
 
@@ -89,16 +91,16 @@ public class TradingManager(AppDbContext db)
             var mappedItem = new
             {
                 x = group.First().Time,
-                y = new [] { openPrice, highPrice, lowPrice, closePrice }
-                
+                y = new[] { openPrice, highPrice, lowPrice, closePrice }
             };
 
             // Add to the remapped array
             remappedArray.Add(mappedItem);
         }
-
+        
         return remappedArray;
     }
+    
 
     public async Task<bool> AddLiquidity(Guid accountGuid, Guid poolGuid, decimal primaryQuantity,
         decimal secondaryQuantity)
@@ -156,14 +158,15 @@ public class TradingManager(AppDbContext db)
         var amount = (decimal)Math.Sqrt((double)primaryQuantity * (double)secondaryQuantity);
         return amount;
     }
+
     /// <summary>
-    /// Processes a buy order into the specified pool.
+    ///     Processes a buy order into the specified pool.
     /// </summary>
-    /// <param name="accountGuid">The <see cref="Guid"/> identifying the account.</param>
-    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="accountGuid">The <see cref="Guid" /> identifying the account.</param>
+    /// <param name="poolGuid">The <see cref="Guid" /> identifying the pool.</param>
     /// <param name="quantitySold">The quantity of quote asset to be sold. </param>
     /// <returns>
-    /// A boolean indication trade success or failure.
+    ///     A boolean indication trade success or failure.
     /// </returns>
     public async Task<bool> BuyCoins(Guid accountGuid, Guid poolGuid, decimal quantitySold)
     {
@@ -171,7 +174,7 @@ public class TradingManager(AppDbContext db)
         if (pool is null) return false;
         // Get users wallet
         var wallet = await _walletManager.Get(accountGuid);
-        
+
         // Return false if wallet doesnt have required coins
         if (!wallet.CheckBalance(pool.SecondaryCoin, quantitySold))
             return false;
@@ -184,11 +187,12 @@ public class TradingManager(AppDbContext db)
         var coinsReceived = CalculateReceivedOnBuy(pool, quantitySold);
 
         // Ensure pool has coins
+        if (coinsReceived <= 0) return false;
         if (coinsReceived >= pool.PooledPrimaryCoin) return false;
 
         // Add the purchased coins
         wallet.DepositCoin(pool.PrimaryCoin, coinsReceived);
-        
+
         // Remove the sold coins
         wallet.WithdrawCoin(pool.SecondaryCoin, quantitySold);
 
@@ -200,7 +204,7 @@ public class TradingManager(AppDbContext db)
         db.Wallets.Update(wallet);
 
         // Log trade event
-        await LogTradeEvent(new PoolTradeLog()
+        await LogTradeEvent(new PoolTradeLog
         {
             TradeType = TradeType.Buy,
             Time = DateTime.UtcNow,
@@ -214,15 +218,15 @@ public class TradingManager(AppDbContext db)
         await db.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
-    /// Processes a sell order into the specified pool.
+    ///     Processes a sell order into the specified pool.
     /// </summary>
-    /// <param name="accountGuid">The <see cref="Guid"/> identifying the account.</param>
-    /// <param name="poolGuid">The <see cref="Guid"/> identifying the pool.</param>
+    /// <param name="accountGuid">The <see cref="Guid" /> identifying the account.</param>
+    /// <param name="poolGuid">The <see cref="Guid" /> identifying the pool.</param>
     /// <param name="quantitySold">The quantity of base asset to be sold. </param>
     /// <returns>
-    /// A boolean indication trade success or failure.
+    ///     A boolean indication trade success or failure.
     /// </returns>
     public async Task<bool> SellCoins(Guid accountGuid, Guid poolGuid, decimal quantitySold)
     {
@@ -234,7 +238,7 @@ public class TradingManager(AppDbContext db)
         // Return false if wallet doesnt have required coins
         if (!wallet.CheckBalance(pool.PrimaryCoin, quantitySold))
             return false;
-        
+
         var feeAmount = quantitySold * FeePercentage;
         //TODO 
         //TODO Send fee amount to liquidity providers
@@ -243,6 +247,7 @@ public class TradingManager(AppDbContext db)
         var coinsReceived = CalculateReceivedOnSell(pool, quantitySold);
 
         // Ensure pool has coins
+        if (coinsReceived <= 0) return false;
         if (coinsReceived >= pool.PooledSecondaryCoin) return false;
 
         // Remove the sold coins
@@ -260,7 +265,7 @@ public class TradingManager(AppDbContext db)
 
         // Log trade event
         // Log trade event
-        await LogTradeEvent(new PoolTradeLog()
+        await LogTradeEvent(new PoolTradeLog
         {
             TradeType = TradeType.Sell,
             Time = DateTime.UtcNow,
@@ -280,7 +285,7 @@ public class TradingManager(AppDbContext db)
     {
         await db.PoolTradeLogs.AddAsync(log);
     }
-    
+
     private static decimal CalculateReceivedOnBuy(Pool pool, decimal quantitySold)
     {
         var feeAmount = quantitySold * FeePercentage;
@@ -290,7 +295,8 @@ public class TradingManager(AppDbContext db)
         var rBeta = pool.PooledSecondaryCoin;
         var dAlpha = k / (rBeta + dBeta);
         return rAlpha - dAlpha;
-    }    
+    }
+
     private static decimal CalculateReceivedOnSell(Pool pool, decimal quantitySold)
     {
         var feeAmount = quantitySold * FeePercentage;
@@ -300,6 +306,5 @@ public class TradingManager(AppDbContext db)
         var rBeta = pool.PooledSecondaryCoin;
         var dBeta = k / (rAlpha - dAlpha);
         return dBeta - rBeta;
-    }    
-
+    }
 }

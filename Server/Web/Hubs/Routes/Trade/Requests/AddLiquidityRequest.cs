@@ -2,7 +2,7 @@
 
 public class AddLiquidityRequest
 {
-    public Guid PoolGuid { get; set; }
-    public decimal PrimaryCoinQuantity { get; set; }
-    public decimal SecondaryCoinQuantity { get; set; }
+    public required Guid PoolGuid { get; set; }
+    public required decimal PrimaryCoinQuantity { get; set; }
+    public required decimal SecondaryCoinQuantity { get; set; }
 }

@@ -13,7 +13,7 @@ public class Wallet
 
     public virtual ICollection<WalletBalance> Balances { get; set; } = null!;
 
-    [JsonIgnore] public virtual  Account Account { get; set; }
+    [JsonIgnore] public virtual Account Account { get; set; }
 
     public WalletBalance? GetBalance(Coin coin)
     {
@@ -39,6 +39,7 @@ public class Wallet
             balance.Quantity += quantity;
         }
     }
+
     public bool WithdrawCoin(Coin coin, decimal quantity)
     {
         var balance = GetBalance(coin);
@@ -51,7 +52,7 @@ public class Wallet
     public bool CheckBalance(Coin coinToCheck, decimal quantityToCheck)
     {
         var balance = GetBalance(coinToCheck);
-        if (balance is null) return false;  // Coin not owned
+        if (balance is null) return false; // Coin not owned
         return quantityToCheck <= balance.Quantity;
     }
 }

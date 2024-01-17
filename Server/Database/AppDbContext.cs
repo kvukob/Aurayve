@@ -24,7 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // Logs
     public virtual DbSet<AuthLog> AuthLogs { get; set; } = null!;
     public virtual DbSet<FaucetLog> FaucetLogs { get; set; } = null!;
-    public virtual DbSet<CodeLog> CodeLogs { get; set; } = null!;
+    public virtual DbSet<GeneratedCodeLog> GeneratedCodeLogs { get; set; } = null!;
     public virtual DbSet<PoolTradeLog> PoolTradeLogs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

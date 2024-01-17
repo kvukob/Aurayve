@@ -11,9 +11,9 @@ public class Pool
     public int Id { get; set; }
 
     public Guid Guid { get; set; } = Guid.NewGuid();
-    public decimal PooledPrimaryCoin { get; set; }
-    public decimal PooledSecondaryCoin { get; set; }
+    public required decimal PooledPrimaryCoin { get; set; }
+    public required decimal PooledSecondaryCoin { get; set; }
     public virtual required Coin PrimaryCoin { get; set; }
     public virtual required Coin SecondaryCoin { get; set; }
-    public virtual required Coin LiquidityCoin { get; set; } 
+    public virtual required Coin LiquidityCoin { get; set; }
 }

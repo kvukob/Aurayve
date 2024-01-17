@@ -10,8 +10,12 @@ public class FaucetLog
     [JsonIgnore]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
+
     public DateTime ClaimTime { get; set; }
-    public decimal ClaimAmount { get; set; }
+    
+    public required decimal ClaimAmount { get; set; }
+    
     public virtual required Wallet Wallet { get; set; }
+    
     public virtual required Coin Coin { get; set; }
 }

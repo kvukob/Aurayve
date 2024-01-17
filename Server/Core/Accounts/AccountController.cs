@@ -19,13 +19,13 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     private readonly AccountManager _accountManager = new(db, configuration);
 
     /// <summary>
-    /// Initializes the user registration process by sending an email to the provided address for email verification.
+    ///     Initializes the user registration process by sending an email to the provided address for email verification.
     /// </summary>
-    /// <param name="request">The <see cref="InitializeRegistrationRequest"/> containing a new users email.</param>
+    /// <param name="request">The <see cref="InitializeRegistrationRequest" /> containing a new users email.</param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the registration initialization.
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of the registration initialization.
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [AllowAnonymous]
     [HttpPost]
@@ -43,14 +43,16 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Verifies the user registration by validating the provided email and verification code.
+    ///     Verifies the user registration by validating the provided email and verification code.
     /// </summary>
-    /// <param name="request">The <see cref="VerifyRegistrationRequest"/> containing a user email and registration
-    /// verification code.</param>
+    /// <param name="request">
+    ///     The <see cref="VerifyRegistrationRequest" /> containing a user email and registration
+    ///     verification code.
+    /// </param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the registration verification.
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of the registration verification.
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [AllowAnonymous]
     [HttpPost]
@@ -68,13 +70,16 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Finalizes the user registration process using a verified email address and password.
+    ///     Finalizes the user registration process using a verified email address and password.
     /// </summary>
-    /// <param name="request">The <see cref="FinalizeRegistrationRequest"/> containing user email, verification code, and password.</param>
+    /// <param name="request">
+    ///     The <see cref="FinalizeRegistrationRequest" /> containing user email, verification code, and
+    ///     password.
+    /// </param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the final registration step.
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of the final registration step.
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [AllowAnonymous]
     [HttpPost]
@@ -92,13 +97,13 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Handles user login by validating the provided email and password, generating an authentication token upon success.
+    ///     Handles user login by validating the provided email and password, generating an authentication token upon success.
     /// </summary>
-    /// <param name="request">The <see cref="LoginRequest"/> containing user email and password.</param>
+    /// <param name="request">The <see cref="LoginRequest" /> containing user email and password.</param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the login attempt.
-    /// If successful, returns an HTTP 200 OK response with a success message and an authentication token.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of the login attempt.
+    ///     If successful, returns an HTTP 200 OK response with a success message and an authentication token.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [AllowAnonymous]
     [HttpPost]
@@ -113,12 +118,12 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Gets an accounts details, including a masked email, date registered, and last login.
+    ///     Gets an accounts details, including a masked email, date registered, and last login.
     /// </summary>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the login attempt.
-    /// If successful, returns an HTTP 200 OK response with a success message and the accounts details.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of the login attempt.
+    ///     If successful, returns an HTTP 200 OK response with a success message and the accounts details.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [HttpGet]
     [Route("details")]
@@ -141,12 +146,12 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Gets an accounts login history.
+    ///     Gets an accounts login history.
     /// </summary>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the login attempt.
-    /// If successful, returns an HTTP 200 OK response with a success message an the login history.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of the login attempt.
+    ///     If successful, returns an HTTP 200 OK response with a success message an the login history.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [HttpGet]
     [Route("login-history")]
@@ -174,16 +179,18 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
             )
         );
     }
-    
+
     /// <summary>
-    /// Changes an accounts email.
+    ///     Changes an accounts email.
     /// </summary>
-    /// <param name="request">A <see cref="ChangeEmailRequest"/> DTO containing an accounts new mail, and a verification
-    ///  code for both the accounts current email and new email.</param>
+    /// <param name="request">
+    ///     A <see cref="ChangeEmailRequest" /> DTO containing an accounts new mail, and a verification
+    ///     code for both the accounts current email and new email.
+    /// </param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of changing an accounts email
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of changing an accounts email
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [HttpPost]
     [Route("change-email")]
@@ -196,14 +203,16 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Changes an accounts password.
+    ///     Changes an accounts password.
     /// </summary>
-    /// <param name="request">A <see cref="ChangePasswordRequest"/> DTO containing an accounts current password and
-    /// new password.</param>
+    /// <param name="request">
+    ///     A <see cref="ChangePasswordRequest" /> DTO containing an accounts current password and
+    ///     new password.
+    /// </param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of changing an accounts password..
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of changing an accounts password..
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [HttpPost]
     [Route("change-password")]
@@ -216,12 +225,12 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Sends an email verification code to the accounts current email
+    ///     Sends an email verification code to the accounts current email
     /// </summary>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of sending the verification code.
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of sending the verification code.
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [HttpGet]
     [Route("get-code/current-email")]
@@ -233,14 +242,14 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
         var wasEmailSent = await _accountManager.SendCode(CodeType.CurrentEmail, account.Email);
         return Ok(new ApiResponse(wasEmailSent, null, null));
     }
-    
+
     /// <summary>
-    /// Sends an email verification code to a new email address.
+    ///     Sends an email verification code to a new email address.
     /// </summary>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of sending the verification code.
-    /// If successful, returns an HTTP 200 OK response with a success message.
-    /// If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    ///     An <see cref="IActionResult" /> representing the result of sending the verification code.
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
     /// </returns>
     [HttpGet]
     [Route("get-code/new-email/{email}")]
@@ -251,11 +260,11 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     }
 
     /// <summary>
-    /// Retrieves client information including IP address, user agent, and location data.
+    ///     Retrieves client information including IP address, user agent, and location data.
     /// </summary>
-    /// <param name="context">The <see cref="HttpContext"/> providing information about the current request.</param>
+    /// <param name="context">The <see cref="HttpContext" /> providing information about the current request.</param>
     /// <returns>
-    /// A <see cref="ClientInformation"/> DTO containing the client information.
+    ///     A <see cref="ClientInformation" /> DTO containing the client information.
     /// </returns>
     private async Task<ClientInformation> GetClientInformation(HttpContext context)
     {

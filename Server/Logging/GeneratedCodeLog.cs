@@ -2,11 +2,14 @@
 
 namespace Server.Core.Accounts.Codes;
 
-public class CodeLog
+public class GeneratedCodeLog
 {
-    [Key] [MaxLength(6)] public string Code { get; set; } = null!;
+    [Key]
+    [MaxLength(6)] 
+    public string Code { get; set; } = null!;
 
-    [MaxLength(255)] public string Email { get; set; } = null!;
+    [MaxLength(255)] 
+    public string Email { get; set; } = null!;
 
     public DateTime ExpirationDate { get; set; }
 

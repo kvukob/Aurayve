@@ -2,7 +2,7 @@
 
 public class AccountDetails
 {
-    public string MaskedEmail { get; set; } = null!;
+    public string MaskedEmail { get; set; } = string.Empty;
     public DateTime DateRegistered { get; set; }
     public DateTime LastLogin { get; set; }
 }

@@ -2,5 +2,5 @@
 
 public class ChartDataRequest
 {
-    public Guid PoolGuid { get; set; }
+    public required Guid PoolGuid { get; set; }
 }

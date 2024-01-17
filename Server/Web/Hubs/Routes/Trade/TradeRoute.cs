@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Server.Core.Trading;
 using Server.Database;
 using Server.Web.Hubs.Routes.Trade.Requests;
@@ -27,7 +26,7 @@ public class TradeRoute(AppDbContext db)
         };
     }
 
-    [AllowAnonymous]
+
     private async Task<HubResponse> GetPools()
     {
         return new HubResponse
@@ -105,7 +104,8 @@ public class TradeRoute(AppDbContext db)
             }
         };
     }
-    
+
+    [AllowAnonymous]
     private async Task<HubResponse> GetChartData(string request)
     {
         var req = JsonSerializer.Deserialize<ChartDataRequest>(request);

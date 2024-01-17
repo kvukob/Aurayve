@@ -2,6 +2,6 @@
 
 public class ChangePasswordRequest
 {
-    public string CurrentPassword { get; set; } = null!;
-    public string NewPassword { get; set; } = null!;
+    public required string CurrentPassword { get; set; }
+    public required string NewPassword { get; set; }
 }
