@@ -5,5 +5,3 @@ Aurayve is a full stack trading exchange using fictional assests.  Users can tra
 Trading functionality is more akin to decentralized exchanges like Uniswap rather than centralized, order book based exchanges.  Aurayve uses 'liquidity pools' to determine price and allow for trading, while providing liquidity at any price.
 
 Utilizes an api combination of REST and sockets (SignalR).
-
-Front end project to be added at a later date.  Both will move to closed source as project develops.
