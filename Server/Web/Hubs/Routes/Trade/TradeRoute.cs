@@ -22,6 +22,7 @@ public class TradeRoute(AppDbContext db)
             "sell-order" => await ProcessSellOrder(request, accountGuid),
             "get-recent-trades" => await GetRecentTrades(request),
             "get-chart-data" => await GetChartData(request),
+            "get-chart" => await GetChart(request),
             _ => new HubResponse()
         };
     }
@@ -118,6 +119,23 @@ public class TradeRoute(AppDbContext db)
             {
                 ChartData = chartData
             }
+        };
+    }
+
+    [AllowAnonymous]
+    private async Task<HubResponse> GetChart(string request)
+    {
+        var req = JsonSerializer.Deserialize<ChartDataRequest>(request);
+        if (req is null) return new HubResponse { Success = false };
+        var chartData = await _tradingManager.GetChart(req.PoolGuid);
+        return new HubResponse
+        {
+            Success = true,
+            Data = new
+            {
+                ChartData = chartData
+            },
+            Message = "v2"
         };
     }
 }

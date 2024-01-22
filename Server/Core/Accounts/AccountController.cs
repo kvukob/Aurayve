@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Server.Core.Accounts.Codes;
 using Server.Core.Accounts.Requests;
 using Server.Database;
@@ -257,6 +258,25 @@ public class AccountController(AppDbContext db, IConfiguration configuration) : 
     {
         var wasEmailSent = await _accountManager.SendCode(CodeType.NewEmail, email);
         return Ok(new ApiResponse(wasEmailSent, null, null));
+    }
+
+    /// <summary>
+    ///     Updates the username for an account
+    /// </summary>
+    /// <returns>
+    ///     An <see cref="IActionResult" /> representing the result of updating the username.
+    ///     If successful, returns an HTTP 200 OK response with a success message.
+    ///     If unsuccessful, returns an HTTP 400 Bad Request response with an error message.
+    /// </returns>
+    [HttpPost]
+    [Route("set-username")]
+    public async Task<IActionResult> SetUsername(SetUsernameRequest request)
+    {
+        if (request.Username.IsNullOrEmpty() || request.Username.Length > 12)
+            return BadRequest(new ApiResponse(false, "Username is required.", null));
+        var accountGuid = this.GetAccountGuid(HttpContext);
+        var usernameChanged = await _accountManager.SetUsername(accountGuid, request.Username);
+        return Ok(new ApiResponse(usernameChanged, null, null));
     }
 
     /// <summary>

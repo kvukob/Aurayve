@@ -12,10 +12,10 @@ public class FaucetLog
     public int Id { get; set; }
 
     public DateTime ClaimTime { get; set; }
-    
+
     public required decimal ClaimAmount { get; set; }
-    
+
     public virtual required Wallet Wallet { get; set; }
-    
+
     public virtual required Coin Coin { get; set; }
 }

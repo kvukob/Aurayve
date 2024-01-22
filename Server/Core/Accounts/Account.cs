@@ -15,7 +15,7 @@ public class Account
 
     [JsonIgnore] [MaxLength(100)] public required string Email { get; set; }
 
-    [MaxLength(35)] public string Username { get; set; } = string.Empty;
+    [MaxLength(12)] public string Username { get; set; } = string.Empty;
 
     [JsonIgnore] [MaxLength(84)] public required string HashedPassword { get; set; }
 

@@ -12,22 +12,7 @@ public class WalletManager(AppDbContext db)
             return false;
         var wallet = new Wallet { Account = account };
         await db.Wallets.AddAsync(wallet);
-
-        // Add initial platform coin balances
-        var arzBalance = new WalletBalance
-        {
-            Coin = await db.Coins.FirstAsync(c => c.Symbol == "ARZ"),
-            Wallet = wallet
-        };
-        var aystBalance = new WalletBalance
-        {
-            Coin = await db.Coins.FirstAsync(c => c.Symbol == "AYST"),
-            Wallet = wallet
-        };
-        await db.WalletBalances.AddAsync(arzBalance);
-        await db.WalletBalances.AddAsync(aystBalance);
-        var created = await db.SaveChangesAsync();
-        return true;
+        return await db.SaveChangesAsync() == 1;
     }
 
     public async Task<Wallet> Get(Guid accountGuid)

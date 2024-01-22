@@ -8,7 +8,7 @@ namespace Server.Core.Faucet;
 
 public class FaucetManager(AppDbContext db)
 {
-    private const decimal ClaimAmount = 0.25m;
+    private const decimal ClaimAmount = 1m;
 
     /// <summary>
     ///     Claims coins out of a specified faucet.
@@ -21,16 +21,20 @@ public class FaucetManager(AppDbContext db)
     {
         var walletManager = new WalletManager(db);
         var coin = await db.Coins.FirstOrDefaultAsync(c => c.Symbol == "ARZ");
-        if (coin is null) return new Tuple<bool, string>(false, "Server error when attempting to claim ");
+        if (coin is null) return new Tuple<bool, string>(false, $"ARZ has not been configured.");
 
         var wallet = await walletManager.Get(accountGuid);
-
+    
         wallet.DepositCoin(coin, ClaimAmount);
         await LogClaimEvent(wallet, coin, ClaimAmount);
 
+        var coinSupplyUpdated = coin.AddSupply(ClaimAmount);
+        if (!coinSupplyUpdated)
+            return new Tuple<bool, string>(false, $"Error while claiming {coin.Symbol}. Coin supply.");
+
         return await db.SaveChangesAsync() >= 2
-            ? new Tuple<bool, string>(true, $" You claimed {ClaimAmount} {coin.Symbol}!")
-            : new Tuple<bool, string>(false, $"Error claiming {coin.Symbol}.  Please contact support.");
+            ? new Tuple<bool, string>(true, $"You claimed {ClaimAmount} {coin.Symbol}!")
+            : new Tuple<bool, string>(false, $"Error while claiming {coin.Symbol}.  Please contact support.");
     }
 
     /// <summary>

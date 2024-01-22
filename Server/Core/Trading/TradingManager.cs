@@ -10,6 +10,7 @@ public class TradingManager(AppDbContext db)
     private const decimal FeePercentage = 0.02m;
     private readonly WalletManager _walletManager = new(db);
 
+
     /// <summary>
     ///     Gets a pools information from a specific Guid.
     /// </summary>
@@ -97,10 +98,83 @@ public class TradingManager(AppDbContext db)
             // Add to the remapped array
             remappedArray.Add(mappedItem);
         }
-        
+
         return remappedArray;
     }
-    
+
+    public async Task<IEnumerable<object>> GetChart(Guid poolGuid)
+    {
+        var recentTrades =
+            await db.PoolTradeLogs
+                .Where(log => log.Pool.Guid == poolGuid)
+                .OrderBy(log => log.Time)
+                .ToListAsync();
+        var groupedByHour = recentTrades
+            .GroupBy(item => item.Time.Hour);
+
+        var testeList = new List<HourlySummary>();
+        var previousClose = groupedByHour.ToList().First().First().Price;
+
+        foreach (var hourGroup in groupedByHour)
+        {
+            // Extract the hour and trades for the current group
+            var hour = hourGroup.Key;
+            var trades = hourGroup.ToList();
+
+            // Calculate open, high, low, and close values
+            var open = previousClose; // Assuming the trades are ordered by time
+            var high = trades.Max(t => t.Price);
+            var low = trades.Min(t => t.Price);
+            var close = trades.Last().Price;
+
+            // Create a new HourlySummary object
+            var hourlySummary = new HourlySummary
+            {
+                Hour = hour,
+                Open = open,
+                High = high,
+                Low = low,
+                Close = close
+            };
+
+            // Add the summary to the list
+            testeList.Add(hourlySummary);
+
+            previousClose = close;
+        }
+
+
+        var firstTradeTime = recentTrades.First().Time;
+        var adjustedFirstTradeTime = new DateTime(
+            firstTradeTime.Year,
+            firstTradeTime.Month,
+            firstTradeTime.Day,
+            firstTradeTime.Hour,
+            0, // Set minutes to 0
+            0 // Set seconds to 0
+        );
+
+        // Remap the array
+        var remappedArray = new List<object>();
+
+        // Iterate through each hour from the start time to the present time
+        for (var hourlyCandleTime = adjustedFirstTradeTime;
+             hourlyCandleTime <= DateTime.Now;
+             hourlyCandleTime = hourlyCandleTime.AddHours(1))
+        {
+            var summary = testeList.FirstOrDefault(s => s.Hour == hourlyCandleTime.Hour);
+            // Create a new object with the current time
+            var newObj = new
+            {
+                x = hourlyCandleTime,
+                y = summary
+            };
+            remappedArray.Add(newObj);
+        }
+
+        return remappedArray;
+    }
+
 
     public async Task<bool> AddLiquidity(Guid accountGuid, Guid poolGuid, decimal primaryQuantity,
         decimal secondaryQuantity)

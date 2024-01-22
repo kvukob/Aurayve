@@ -13,16 +13,16 @@ public class PoolTradeLog
     public int Id { get; set; }
 
     public required TradeType TradeType { get; set; }
-    
+
     public required DateTime Time { get; set; }
-    
+
     public required decimal Price { get; set; }
-    
+
     public required decimal QuantityReceived { get; set; }
-    
+
     public virtual required Coin CoinReceived { get; set; }
-    
+
     public virtual required Pool Pool { get; set; }
-    
+
     public virtual required Wallet Wallet { get; set; }
 }

@@ -48,7 +48,8 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
             MaskedEmail = Account.MaskEmail(account.Email),
             DateRegistered = account.DateRegistered,
             LastLogin = db.AuthLogs.Where(a => a.Account == account)
-                .OrderByDescending(l => l.Timestamp).Take(2).LastAsync().Result.Timestamp
+                .OrderByDescending(l => l.Timestamp).Take(2).LastAsync().Result.Timestamp,
+            Username = account.Username
         };
         return details;
     }
@@ -209,7 +210,8 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
             return new Tuple<bool, string>(false, "Verification code for new email has expired.");
 
         var currentEmailCodeLog =
-            await db.GeneratedCodeLogs.FirstOrDefaultAsync(log => log.Email == account.Email && log.Code == currentEmailCode);
+            await db.GeneratedCodeLogs.FirstOrDefaultAsync(log =>
+                log.Email == account.Email && log.Code == currentEmailCode);
         if (currentEmailCodeLog is null)
             return new Tuple<bool, string>(false, "Verification code for current email not found.  Please try again.");
         if (currentEmailCodeLog.ExpirationDate < DateTime.UtcNow)
@@ -250,6 +252,21 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
         db.Accounts.Update(account);
         await db.SaveChangesAsync();
         return new Tuple<bool, string>(true, "Your password has been changed successfully.");
+    }
+
+    public async Task<bool> SetUsername(Guid accountGuid, string username)
+    {
+        var account = await GetByGuid(accountGuid);
+        if (account is null) return false;
+
+        var usernameExists =
+            await db.Accounts.FirstOrDefaultAsync(a => a.Username.Equals(username)) != null;
+
+        if (usernameExists) return false;
+
+        account.Username = username.ToLowerInvariant();
+        db.Accounts.Update(account);
+        return await db.SaveChangesAsync() == 1;
     }
 
 
@@ -321,7 +338,8 @@ public class AccountManager(AppDbContext db, IConfiguration configuration)
     public async Task<bool> SendCode(CodeType codeType, string email)
     {
         // Check, if exists, previous code of same type and removes it regardless of expiry
-        var previousCode = await db.GeneratedCodeLogs.FirstOrDefaultAsync(log => log.Type == codeType && log.Email == email);
+        var previousCode =
+            await db.GeneratedCodeLogs.FirstOrDefaultAsync(log => log.Type == codeType && log.Email == email);
         if (previousCode is not null) db.GeneratedCodeLogs.Remove(previousCode);
 
         var verificationCode = GenerateVerificationCode();
